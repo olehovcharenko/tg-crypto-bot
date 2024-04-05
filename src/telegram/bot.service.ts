@@ -26,12 +26,15 @@ export class BotService {
     this.bot.command('createWallet', this.createWalletHandler.bind(this));
     this.bot.command('send', this.sendEthHandler.bind(this));
     this.bot.command('checkBalance', this.checkBalance.bind(this));
+    this.bot.command('help', this.helpHandler.bind(this)); // Add help command
 
     this.bot.launch();
   }
 
   async startHandler(ctx: any) {
-    ctx.reply('Welcome to the Ethereum wallet bot!');
+    ctx.reply(
+      'Welcome to the Ethereum wallet bot! Use /help for check available commands',
+    );
   }
 
   async createWalletHandler(ctx: any) {
@@ -134,5 +137,30 @@ export class BotService {
 
       return null;
     }
+  }
+  async helpHandler(ctx: any) {
+    const availableCommands = [
+      { command: '/start', description: 'Start the bot' },
+      {
+        command: '/createWallet',
+        description: 'Generate a new Ethereum wallet',
+      },
+      {
+        command: '/send <recipientAddress> <amount>',
+        description: 'Send ETH to another address',
+      },
+      {
+        command: '/checkBalance <address>',
+        description: 'Check the balance of an Ethereum address',
+      },
+      { command: '/help', description: 'Display available commands' },
+    ];
+
+    let message = 'Available commands:\n';
+    availableCommands.forEach((cmd) => {
+      message += `${cmd.command}: ${cmd.description}\n`;
+    });
+
+    await ctx.reply(message);
   }
 }

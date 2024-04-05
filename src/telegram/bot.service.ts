@@ -15,6 +15,7 @@ export class BotService {
   constructor(
     @InjectRepository(WalletEntity)
     private walletRepository: Repository<WalletEntity>,
+    @InjectRepository(TransactionEntity)
     private transactionRepository: Repository<TransactionEntity>,
   ) {
     this.provider = new ethers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
@@ -38,6 +39,7 @@ export class BotService {
     const newWallet = new WalletEntity();
     newWallet.address = wallet.address;
     newWallet.privateKey = wallet.privateKey;
+    newWallet.userName = ctx.from.username;
 
     await this.walletRepository.save(newWallet);
 
@@ -91,11 +93,11 @@ export class BotService {
     }
 
     const wallet = await this.walletRepository.findOne({
-      where: { address: recipientAddress },
+      where: { userName: ctx.from.username },
     });
 
     if (!wallet || !wallet.privateKey) {
-      await ctx.reply(`Wallet with address ${recipientAddress} not found`);
+      await ctx.reply(`Wallets not found`);
       return;
     }
 

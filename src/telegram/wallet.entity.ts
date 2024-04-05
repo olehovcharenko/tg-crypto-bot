@@ -20,6 +20,9 @@ export class WalletEntity {
   @Column()
   balance: string;
 
+  @Column({ name: 'user_name' })
+  userName: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

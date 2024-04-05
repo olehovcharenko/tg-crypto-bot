@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { ethers } from 'ethers';
-import { WalletEntity } from 'src/telegram/wallet.entity';
+import { WalletEntity } from 'src/telegram/entities/wallet.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EtherErrorCodesEnum } from './error-codes.enum';
+import { TransactionEntity } from './entities/transaction.entity';
 
 @Injectable()
 export class BotService {
@@ -14,6 +15,7 @@ export class BotService {
   constructor(
     @InjectRepository(WalletEntity)
     private walletRepository: Repository<WalletEntity>,
+    private transactionRepository: Repository<TransactionEntity>,
   ) {
     this.provider = new ethers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
 
@@ -83,7 +85,7 @@ export class BotService {
 
     if (!recipientAddress || isNaN(amount) || amount <= 0) {
       await ctx.reply(
-        'Invalid parameters. Usage: /sendETH <recipientAddress> <amount>',
+        'Invalid parameters. Usage: /send <recipientAddress> <amount>',
       );
       return;
     }
@@ -107,10 +109,16 @@ export class BotService {
         value: amountInWei,
       });
 
+      await this.transactionRepository.save({
+        addressFrom: '',
+        addressTo: recipientAddress,
+        amount: amount.toString(),
+        hash: transaction.hash,
+      });
+
       await ctx.reply(
         `Successfully sent ${amount} ETH to ${recipientAddress}. Transaction hash: ${transaction.hash}`,
       );
-      return transaction.hash;
     } catch (error) {
       console.error('Error sending ETH:', error);
 

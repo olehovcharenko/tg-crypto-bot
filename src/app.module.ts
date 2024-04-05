@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BotModule } from './telegram/bot.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { WalletEntity } from './telegram/wallet.entity';
+import { WalletEntity } from './telegram/entities/wallet.entity';
 import { config } from 'dotenv';
 
 config();

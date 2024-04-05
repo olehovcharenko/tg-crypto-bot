@@ -4,8 +4,9 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BotModule } from './telegram/bot.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { WalletEntity } from './telegram/entities/wallet.entity';
+import { WalletEntity } from './telegram/wallet.entity';
 import { config } from 'dotenv';
+import { TransactionEntity } from './telegram/transaction.entity';
 
 config();
 @Module({
@@ -20,7 +21,7 @@ config();
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
-        entities: [WalletEntity],
+        entities: [WalletEntity, TransactionEntity],
       }),
     }),
     BotModule,

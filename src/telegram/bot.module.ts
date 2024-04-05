@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { BotService } from './bot.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { WalletEntity } from './entities/wallet.entity';
+import { WalletEntity } from './wallet.entity';
+import { TransactionEntity } from './transaction.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([WalletEntity])],
+  imports: [TypeOrmModule.forFeature([WalletEntity, TransactionEntity])],
   controllers: [],
   providers: [BotService],
 })

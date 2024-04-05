@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { ethers } from 'ethers';
-import { WalletEntity } from 'src/telegram/entities/wallet.entity';
+import { WalletEntity } from 'src/telegram/wallet.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EtherErrorCodesEnum } from './error-codes.enum';
-import { TransactionEntity } from './entities/transaction.entity';
+import { TransactionEntity } from './transaction.entity';
 
 @Injectable()
 export class BotService {
@@ -110,7 +110,7 @@ export class BotService {
       });
 
       await this.transactionRepository.save({
-        addressFrom: '',
+        addressFrom: transaction.from,
         addressTo: recipientAddress,
         amount: amount.toString(),
         hash: transaction.hash,

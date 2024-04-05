@@ -1,18 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { ethers } from 'ethers';
-import { WalletEntity } from 'src/wallet/wallet.entity';
+import { WalletEntity } from 'src/telegram/wallet.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class BotService {
   private bot: Telegraf;
+  private readonly provider: ethers.JsonRpcProvider;
 
   constructor(
     @InjectRepository(WalletEntity)
     private walletRepository: Repository<WalletEntity>,
   ) {
+    this.provider = new ethers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
+
     this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
     this.bot.command('start', this.startHandler.bind(this));
@@ -40,21 +43,44 @@ export class BotService {
   async sendEthHandler(ctx: any) {
     const args = ctx.message.text.split(' ');
     const amount = parseFloat(args[1]);
-    const recipient = args[2];
+    const recipientAddress = args[2];
 
-    if (!amount || !recipient) {
-      ctx.reply('Invalid command. Usage: /send <amount> <recipient_address>');
+    if (!recipientAddress || isNaN(amount) || amount <= 0) {
+      await ctx.reply(
+        'Invalid parameters. Usage: /sendETH <recipientAddress> <amount>',
+      );
       return;
     }
 
-    // const wallet = await this.walletRepository.findOne(); // Get sender's wallet from database
-    // const provider = new ethers.providers.JsonRpcProvider(process.env.ETH_NODE_URL);
-    // const signer = new ethers.Wallet(wallet.privateKey, provider);
-    // const transaction = await signer.sendTransaction({
-    //   to: recipient,
-    //   value: ethers.utils.parseEther(amount.toString()),
-    // });
+    const wallet = await this.walletRepository.findOne({
+      where: { address: recipientAddress },
+    });
 
-    ctx.reply(`Successfully sent ${amount} ETH to ${recipient}`);
+    if (!wallet || !wallet.privateKey) {
+      await ctx.reply(`Wallet with address ${recipientAddress} not found`);
+      return;
+    }
+
+    const senderWallet = new ethers.Wallet(wallet.privateKey, this.provider);
+
+    const amountInWei = ethers.parseEther(amount.toString());
+
+    try {
+      const transaction = await senderWallet.sendTransaction({
+        to: recipientAddress,
+        value: amountInWei,
+      });
+
+      await ctx.reply(
+        `Successfully sent ${amount} ETH to ${recipientAddress}. Transaction hash: ${transaction.hash}`,
+      );
+      return transaction.hash;
+    } catch (error) {
+      console.error('Error sending ETH:', error);
+      await ctx.reply(
+        'An error occurred while sending ETH. Please try again later.',
+      );
+      return null;
+    }
   }
 }

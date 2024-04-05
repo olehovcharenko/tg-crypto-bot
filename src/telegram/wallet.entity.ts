@@ -10,4 +10,7 @@ export class WalletEntity {
 
   @Column()
   privateKey: string;
+
+  @Column()
+  balance: string;
 }

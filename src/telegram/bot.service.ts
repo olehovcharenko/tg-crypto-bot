@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { ethers } from 'ethers';
-import { Wallet } from 'src/wallet/wallet.entity';
+import { WalletEntity } from 'src/wallet/wallet.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -10,8 +10,8 @@ export class BotService {
   private bot: Telegraf;
 
   constructor(
-    @InjectRepository(Wallet)
-    private walletRepository: Repository<Wallet>,
+    @InjectRepository(WalletEntity)
+    private walletRepository: Repository<WalletEntity>,
   ) {
     this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
@@ -28,7 +28,7 @@ export class BotService {
 
   async createWalletHandler(ctx: any) {
     const wallet = ethers.Wallet.createRandom();
-    const newWallet = new Wallet();
+    const newWallet = new WalletEntity();
     newWallet.address = wallet.address;
     newWallet.privateKey = wallet.privateKey;
 

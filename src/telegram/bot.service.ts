@@ -47,8 +47,6 @@ export class BotService {
       return;
     }
 
-    // Perform Ethereum transaction here using ethers.js
-    // Example:
     // const wallet = await this.walletRepository.findOne(); // Get sender's wallet from database
     // const provider = new ethers.providers.JsonRpcProvider(process.env.ETH_NODE_URL);
     // const signer = new ethers.Wallet(wallet.privateKey, provider);

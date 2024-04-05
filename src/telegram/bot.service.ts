@@ -39,7 +39,7 @@ export class BotService {
     const newWallet = new WalletEntity();
     newWallet.address = wallet.address;
     newWallet.privateKey = wallet.privateKey;
-    newWallet.userName = ctx.from.username;
+    newWallet.userId = String(ctx.from.id);
 
     await this.walletRepository.save(newWallet);
 
@@ -93,7 +93,7 @@ export class BotService {
     }
 
     const wallet = await this.walletRepository.findOne({
-      where: { userName: ctx.from.username },
+      where: { userId: ctx.from.id },
     });
 
     if (!wallet || !wallet.privateKey) {

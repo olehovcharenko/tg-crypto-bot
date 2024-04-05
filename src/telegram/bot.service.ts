@@ -84,17 +84,6 @@ export class BotService {
   }
 
   async sendEthHandler(ctx: any) {
-    const args = ctx.message.text.split(' ');
-    const amount = parseFloat(args[1]);
-    const recipientAddress = args[2];
-
-    if (!recipientAddress || isNaN(amount) || amount <= 0) {
-      await ctx.reply(
-        'Invalid parameters. Usage: /send <recipientAddress> <amount>',
-      );
-      return;
-    }
-
     const wallet = await this.walletRepository.findOne({
       where: { userId: ctx.from.id },
     });
@@ -104,6 +93,63 @@ export class BotService {
       return;
     }
 
+    const balance = await this.provider.getBalance(wallet.address);
+
+    const keyboard = {
+      inline_keyboard: [
+        [{ text: '25%', callback_data: '25' }],
+        [{ text: '50%', callback_data: '50' }],
+        [{ text: '75%', callback_data: '75' }],
+        [{ text: '100%', callback_data: '100' }],
+        [{ text: 'Custom Amount', callback_data: 'custom' }],
+      ],
+    };
+
+    await ctx.reply('Select the amount you want to send:', {
+      reply_markup: keyboard,
+    });
+
+    this.bot.on('callback_query', async (query: any) => {
+      const callbackData = query.update.callback_query.data;
+      const recipientAddress = ctx.message.text.split(' ')[1];
+
+      if (callbackData === 'custom') {
+        await ctx.reply('Enter the custom amount:');
+
+        this.bot.on('text', async (msg: any) => {
+          const customAmount = parseFloat(msg.text);
+
+          if (!isNaN(customAmount) && customAmount > 0) {
+            await this.processTransaction(ctx, recipientAddress, customAmount);
+          } else {
+            await ctx.reply('Invalid amount entered');
+          }
+        });
+      } else {
+        const percentage = parseFloat(callbackData);
+        if (!isNaN(percentage) && percentage > 0) {
+          const amount =
+            (percentage / 100) * parseFloat(ethers.formatEther(balance));
+
+          console.log('AMOUNT===========', amount);
+
+          await this.processTransaction(ctx, recipientAddress, amount);
+        } else {
+          await ctx.reply('Invalid selection');
+        }
+      }
+    });
+  }
+
+  async processTransaction(ctx: any, recipientAddress: string, amount: number) {
+    const wallet = await this.walletRepository.findOne({
+      where: { userId: ctx.from.id },
+    });
+
+    if (!wallet || !wallet.privateKey) {
+      await ctx.reply(`Wallets not found`);
+      return;
+    }
     const senderWallet = new ethers.Wallet(wallet.privateKey, this.provider);
 
     const amountInWei = ethers.parseEther(amount.toString());
@@ -146,7 +192,7 @@ export class BotService {
         description: 'Generate a new Ethereum wallet',
       },
       {
-        command: '/send <recipientAddress> <amount>',
+        command: '/send <recipientAddress>',
         description: 'Send ETH to another address',
       },
       {

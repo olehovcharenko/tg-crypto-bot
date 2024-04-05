@@ -1,16 +1,15 @@
-import { DataSource, DataSourceOptions } from 'typeorm';
+import { DataSource } from 'typeorm';
+import { WalletEntity } from '../wallet/wallet.entity';
+import { ConfigService } from '@nestjs/config';
 
-export const dataSourceOptions: DataSourceOptions = {
+const configService = new ConfigService();
+
+export const connectionSource = new DataSource({
   type: 'mysql',
-  host: process.env.DB_HOST,
-  port: +process.env.DB_PORT,
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  entities: ['dist/**/*.entity.js'],
-  migrations: ['dist/src/migrations/*{.ts,.js}'],
-};
-
-const dataSource = new DataSource(dataSourceOptions);
-
-export default dataSource;
+  host: configService.get('DB_HOST'),
+  port: configService.get('DB_PORT'),
+  username: configService.get('DB_USERNAME'),
+  password: configService.get('DB_PASSWORD'),
+  database: configService.get('DB_DATABASE'),
+  entities: [WalletEntity],
+});

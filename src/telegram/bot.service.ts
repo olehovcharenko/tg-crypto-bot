@@ -4,7 +4,6 @@ import { ethers } from 'ethers';
 import { WalletEntity } from 'src/telegram/wallet.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EtherErrorCodesEnum } from './error-codes.enum';
 
 @Injectable()
 export class BotService {
@@ -192,8 +191,10 @@ export class BotService {
     } catch (error) {
       console.error('Error sending ETH:', error);
 
-      if (error.code === EtherErrorCodesEnum.INSUFFICIENT_FUNDS) {
-        await ctx.reply('Insufficient funds');
+      if (error.code === 'INSUFFICIENT_FUNDS') {
+        await ctx.reply(
+          'You do not have sufficient funds for this transaction.',
+        );
       } else {
         await ctx.reply(
           'An error occurred while sending ETH. Please try again later.',

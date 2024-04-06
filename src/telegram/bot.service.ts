@@ -5,7 +5,6 @@ import { WalletEntity } from 'src/telegram/wallet.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EtherErrorCodesEnum } from './error-codes.enum';
-import { TransactionEntity } from './transaction.entity';
 
 @Injectable()
 export class BotService {
@@ -15,8 +14,6 @@ export class BotService {
   constructor(
     @InjectRepository(WalletEntity)
     private walletRepository: Repository<WalletEntity>,
-    @InjectRepository(TransactionEntity)
-    private transactionRepository: Repository<TransactionEntity>,
   ) {
     this.provider = new ethers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
 
@@ -82,10 +79,12 @@ export class BotService {
 
       await this.walletRepository.update(
         { address: address },
-        { balance: String(balance) },
+        { balance: String(parseFloat(ethers.formatEther(balance))) },
       );
 
-      await ctx.reply(`Balance of ${address}: ${balance} ETH`);
+      await ctx.reply(
+        `Balance of ${address}: ${parseFloat(ethers.formatEther(balance))} ETH`,
+      );
     } catch (error) {
       await ctx.reply(
         'Failed to check address balance. Please try again later.',
@@ -139,8 +138,6 @@ export class BotService {
         this.bot.on('text', async (msg: any) => {
           const customAmount = parseFloat(msg.text);
 
-          console.log('================', customAmount);
-
           if (!isNaN(customAmount) && customAmount > 0) {
             await this.processTransaction(ctx, recipientAddress, customAmount);
           } else {
@@ -152,8 +149,6 @@ export class BotService {
         if (!isNaN(percentage) && percentage > 0) {
           const amount =
             (percentage / 100) * parseFloat(ethers.formatEther(balance));
-
-          console.log('AMOUNT===========', amount);
 
           await this.processTransaction(ctx, recipientAddress, amount);
         } else {
@@ -186,15 +181,13 @@ export class BotService {
         value: amountInWei,
       });
 
-      await this.transactionRepository.save({
-        addressFrom: transaction.from,
-        addressTo: recipientAddress,
-        amount: amount.toString(),
-        hash: transaction.hash,
-      });
+      await this.walletRepository.update(
+        { id: wallet.id },
+        { balance: wallet.balance + amount },
+      );
 
       await ctx.reply(
-        `Successfully sent ${amount} ETH to ${recipientAddress}. Transaction hash: ${transaction.hash}`,
+        `Successfully sent ${amount} ETH to ${recipientAddress}. \nTransaction hash: ${transaction.hash}`,
       );
     } catch (error) {
       console.error('Error sending ETH:', error);

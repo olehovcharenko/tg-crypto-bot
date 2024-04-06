@@ -26,7 +26,7 @@ export class BotService {
     this.bot.command('createWallet', this.createWalletHandler.bind(this));
     this.bot.command('send', this.sendEthHandler.bind(this));
     this.bot.command('checkBalance', this.checkBalance.bind(this));
-    this.bot.command('help', this.helpHandler.bind(this)); // Add help command
+    this.bot.command('help', this.helpHandler.bind(this));
 
     this.bot.launch();
   }
@@ -188,7 +188,7 @@ export class BotService {
     const availableCommands = [
       { command: '/start', description: 'Start the bot' },
       {
-        command: '/createWallet',
+        command: '/createwallet',
         description: 'Generate a new Ethereum wallet',
       },
       {
@@ -196,7 +196,7 @@ export class BotService {
         description: 'Send ETH to another address',
       },
       {
-        command: '/checkBalance <address>',
+        command: '/checkbalance <address>',
         description: 'Check the balance of an Ethereum address',
       },
       { command: '/help', description: 'Display available commands' },

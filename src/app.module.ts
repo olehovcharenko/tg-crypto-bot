@@ -5,10 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BotModule } from './telegram/bot.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WalletEntity } from './telegram/wallet.entity';
-import { config } from 'dotenv';
-import { TransactionEntity } from './telegram/transaction.entity';
 
-config();
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -21,7 +18,7 @@ config();
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
-        entities: [WalletEntity, TransactionEntity],
+        entities: [WalletEntity],
       }),
     }),
     BotModule,

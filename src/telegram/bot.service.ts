@@ -31,25 +31,35 @@ export class BotService {
     this.bot.launch();
   }
 
-  async startHandler(ctx: any) {
+  async startHandler(ctx: any): Promise<void> {
     ctx.reply(
       'Welcome to the Ethereum wallet bot! Use /help for check available commands',
     );
   }
 
-  async createWalletHandler(ctx: any) {
-    const wallet = ethers.Wallet.createRandom();
+  async createWalletHandler(ctx: any): Promise<void> {
+    const etherWallet = ethers.Wallet.createRandom();
+
+    const wallet = await this.walletRepository.findOne({
+      where: { userId: ctx.from.id },
+    });
+
+    if (wallet) {
+      await ctx.reply(`An ETH wallet for this user already exists.`);
+      return;
+    }
+
     const newWallet = new WalletEntity();
-    newWallet.address = wallet.address;
-    newWallet.privateKey = wallet.privateKey;
+    newWallet.address = etherWallet.address;
+    newWallet.privateKey = etherWallet.privateKey;
     newWallet.userId = String(ctx.from.id);
 
     await this.walletRepository.save(newWallet);
 
-    ctx.reply(`Your new wallet address: ${wallet.address}`);
+    ctx.reply(`Your new wallet address: ${etherWallet.address}`);
   }
 
-  async checkBalance(ctx: any) {
+  async checkBalance(ctx: any): Promise<void> {
     const args = ctx.message.text.split(' ');
     const address = args[1];
 
@@ -83,7 +93,17 @@ export class BotService {
     }
   }
 
-  async sendEthHandler(ctx: any) {
+  async sendEthHandler(ctx: any): Promise<void> {
+    const args = ctx.message.text.split(' ');
+    const recipientAddress = args[1];
+
+    if (!recipientAddress) {
+      await ctx.reply(
+        'Invalid recipient address. Usage: /send <recipientAddress>',
+      );
+      return;
+    }
+
     const wallet = await this.walletRepository.findOne({
       where: { userId: ctx.from.id },
     });
@@ -119,6 +139,8 @@ export class BotService {
         this.bot.on('text', async (msg: any) => {
           const customAmount = parseFloat(msg.text);
 
+          console.log('================', customAmount);
+
           if (!isNaN(customAmount) && customAmount > 0) {
             await this.processTransaction(ctx, recipientAddress, customAmount);
           } else {
@@ -141,7 +163,11 @@ export class BotService {
     });
   }
 
-  async processTransaction(ctx: any, recipientAddress: string, amount: number) {
+  async processTransaction(
+    ctx: any,
+    recipientAddress: string,
+    amount: number,
+  ): Promise<void> {
     const wallet = await this.walletRepository.findOne({
       where: { userId: ctx.from.id },
     });
@@ -180,11 +206,9 @@ export class BotService {
           'An error occurred while sending ETH. Please try again later.',
         );
       }
-
-      return null;
     }
   }
-  async helpHandler(ctx: any) {
+  async helpHandler(ctx: any): Promise<void> {
     const availableCommands = [
       { command: '/start', description: 'Start the bot' },
       {

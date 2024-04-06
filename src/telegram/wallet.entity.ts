@@ -17,9 +17,6 @@ export class WalletEntity {
   @Column({ name: 'private_key' })
   privateKey: string;
 
-  @Column()
-  balance: string;
-
   @Column({ name: 'user_id' })
   userId: string;
 

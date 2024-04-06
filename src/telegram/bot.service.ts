@@ -76,11 +76,6 @@ export class BotService {
     try {
       const balance = await this.provider.getBalance(address);
 
-      await this.walletRepository.update(
-        { address: address },
-        { balance: String(parseFloat(ethers.formatEther(balance))) },
-      );
-
       await ctx.reply(
         `Balance of ${address}: ${parseFloat(ethers.formatEther(balance))} ETH`,
       );
@@ -106,12 +101,16 @@ export class BotService {
       where: { userId: ctx.from.id },
     });
 
+    console.log('============WALET FROM DB==========', wallet);
+
     if (!wallet || !wallet.privateKey) {
       await ctx.reply(`Wallets not found`);
       return;
     }
 
     const balance = await this.provider.getBalance(wallet.address);
+
+    console.log('============BALANCE FROM ETHR==========', balance);
 
     const keyboard = {
       inline_keyboard: [
@@ -131,6 +130,10 @@ export class BotService {
       const callbackData = query.update.callback_query.data;
       const recipientAddress = ctx.message.text.split(' ')[1];
 
+      console.log('============RECEP ADDRESS==========', recipientAddress);
+
+      console.log('============CALLBACK DATA==========', callbackData);
+
       if (callbackData === 'custom') {
         await ctx.reply('Enter the custom amount:');
 
@@ -145,9 +148,14 @@ export class BotService {
         });
       } else {
         const percentage = parseFloat(callbackData);
+
+        console.log('============PERCENT==========', percentage);
+
         if (!isNaN(percentage) && percentage > 0) {
           const amount =
             (percentage / 100) * parseFloat(ethers.formatEther(balance));
+
+          console.log('============AMOUNT TO PROCESS TX==========', amount);
 
           await this.processTransaction(ctx, recipientAddress, amount);
         } else {
@@ -166,11 +174,17 @@ export class BotService {
       where: { userId: ctx.from.id },
     });
 
+    console.log('============WALLET PROCESS TX==========', wallet);
+
+    console.log('============AMOUNT PROCESS TX==========', amount);
+
     if (!wallet || !wallet.privateKey) {
       await ctx.reply(`Wallets not found`);
       return;
     }
     const senderWallet = new ethers.Wallet(wallet.privateKey, this.provider);
+
+    console.log('============SENDER WALLET PROCESS TX==========', senderWallet);
 
     const amountInWei = ethers.parseEther(amount.toString());
 
@@ -179,11 +193,6 @@ export class BotService {
         to: recipientAddress,
         value: amountInWei,
       });
-
-      await this.walletRepository.update(
-        { id: wallet.id },
-        { balance: wallet.balance + amount },
-      );
 
       await ctx.reply(
         `Successfully sent ${amount} ETH to ${recipientAddress}. \nTransaction hash: ${transaction.hash}`,

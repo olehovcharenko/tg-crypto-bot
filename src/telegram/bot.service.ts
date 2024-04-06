@@ -23,9 +23,9 @@ export class BotService {
     this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
     this.bot.command('start', this.startHandler.bind(this));
-    this.bot.command('createWallet', this.createWalletHandler.bind(this));
+    this.bot.command('createwallet', this.createWalletHandler.bind(this));
     this.bot.command('send', this.sendEthHandler.bind(this));
-    this.bot.command('checkBalance', this.checkBalance.bind(this));
+    this.bot.command('checkbalance', this.checkBalance.bind(this));
     this.bot.command('help', this.helpHandler.bind(this));
 
     this.bot.launch();

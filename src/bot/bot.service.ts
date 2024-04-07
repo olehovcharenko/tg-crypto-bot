@@ -39,35 +39,38 @@ export class BotService {
   }
 
   private async helpHandler(ctx: Context): Promise<void> {
-    let message = 'Available commands:\n';
+    const message = availableCommands
+      .map((cmd) => `${cmd.command}: ${cmd.description}`)
+      .join('\n');
 
-    availableCommands.forEach((cmd) => {
-      message += `${cmd.command}: ${cmd.description}\n`;
-    });
-
-    await ctx.reply(message);
+    await ctx.reply(`Available commands:\n${message}`);
   }
 
   private async createWalletHandler(ctx: Context): Promise<void> {
-    const etherWallet = ethers.Wallet.createRandom();
+    try {
+      const userId = String(ctx.from.id);
 
-    const wallet = await this.walletRepository.findOne({
-      where: { userId: String(ctx.from.id) },
-    });
+      const existingWallet = await this.walletRepository.findOne({
+        where: { userId },
+      });
+      if (existingWallet) {
+        await ctx.reply('An ETH wallet for this user already exists.');
+        return;
+      }
 
-    if (wallet) {
-      await ctx.reply(`An ETH wallet for this user already exists.`);
-      return;
+      const etherWallet = ethers.Wallet.createRandom();
+
+      const newWallet = new WalletEntity();
+      newWallet.address = etherWallet.address;
+      newWallet.privateKey = etherWallet.privateKey;
+      newWallet.userId = userId;
+      await this.walletRepository.save(newWallet);
+
+      await ctx.reply(`Your new wallet address: ${etherWallet.address}`);
+    } catch (error) {
+      console.error('Error creating wallet:', error);
+      await ctx.reply('Failed to create wallet. Please try again later.');
     }
-
-    const newWallet = new WalletEntity();
-    newWallet.address = etherWallet.address;
-    newWallet.privateKey = etherWallet.privateKey;
-    newWallet.userId = String(ctx.from.id);
-
-    await this.walletRepository.save(newWallet);
-
-    ctx.reply(`Your new wallet address: ${etherWallet.address}`);
   }
 
   private async checkBalanceHandler(ctx: any): Promise<void> {

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Telegraf } from 'telegraf';
+import { Context, Telegraf } from 'telegraf';
 import { ethers } from 'ethers';
 import { WalletEntity } from 'src/bot/wallet.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ErrorCodesEnum, KeyboardOptionsEnum } from './bot.enums';
 import { amountKeyboard, availableCommands } from './bot.constants';
-import { IDefineAvailableBalance } from './bot.interfaces';
+import { IDefineAvailableBalance, IProcessTransaction } from './bot.interfaces';
 
 @Injectable()
 export class BotService {
@@ -32,17 +32,17 @@ export class BotService {
     this.bot.command('help', this.helpHandler.bind(this));
   }
 
-  private async startHandler(ctx: any): Promise<void> {
-    ctx.reply(
+  private async startHandler(ctx: Context): Promise<void> {
+    await ctx.reply(
       'Welcome to the Ethereum wallet bot! Use /help for check available commands',
     );
   }
 
-  private async createWalletHandler(ctx: any): Promise<void> {
+  private async createWalletHandler(ctx: Context): Promise<void> {
     const etherWallet = ethers.Wallet.createRandom();
 
     const wallet = await this.walletRepository.findOne({
-      where: { userId: ctx.from.id },
+      where: { userId: String(ctx.from.id) },
     });
 
     if (wallet) {
@@ -126,14 +126,18 @@ export class BotService {
           const customAmount = parseFloat(msg.text);
 
           if (!isNaN(customAmount) && customAmount > 0) {
-            await this.processTransaction(ctx, recipientAddress, customAmount);
+            await this.processTransaction({
+              ctx,
+              recipientAddress,
+              amount: customAmount,
+            });
           } else {
             await ctx.reply('Invalid amount entered');
           }
         });
       } else if (callbackData === KeyboardOptionsEnum.OneHundredPercent) {
         const { availableBalance, gasPrice, gasLimit } =
-          await this.defineAvailableBalance(wallet.address);
+          await this.defineBalanceAndGas(wallet.address);
 
         if (availableBalance <= 0) {
           await ctx.reply(
@@ -142,13 +146,13 @@ export class BotService {
           return;
         }
 
-        await this.processTransaction(
+        await this.processTransaction({
           ctx,
           recipientAddress,
-          parseFloat(ethers.formatEther(availableBalance)),
+          amount: parseFloat(ethers.formatEther(availableBalance)),
           gasLimit,
           gasPrice,
-        );
+        });
       } else {
         const percentage = parseFloat(callbackData);
 
@@ -157,7 +161,8 @@ export class BotService {
         if (!isNaN(percentage) && percentage > 0) {
           const amount =
             (percentage / 100) * parseFloat(ethers.formatEther(balance));
-          await this.processTransaction(ctx, recipientAddress, amount);
+
+          await this.processTransaction({ ctx, recipientAddress, amount });
         } else {
           await ctx.reply('Invalid selection');
         }
@@ -165,52 +170,48 @@ export class BotService {
     });
   }
 
-  private async processTransaction(
-    ctx: any,
-    recipientAddress: string,
-    amount: number,
-    gasLimit?: bigint,
-    gasPrice?: bigint,
-  ): Promise<void> {
+  private async processTransaction(data: IProcessTransaction): Promise<void> {
     const wallet = await this.walletRepository.findOne({
-      where: { userId: ctx.from.id },
+      where: { userId: String(data.ctx.from.id) },
     });
 
     if (!wallet || !wallet.privateKey) {
-      await ctx.reply(`Wallets not found`);
+      await data.ctx.reply(`Wallets not found`);
       return;
     }
+
     const senderWallet = new ethers.Wallet(wallet.privateKey, this.provider);
 
-    const amountInWei = ethers.parseEther(amount.toString());
+    const amountInWei = ethers.parseEther(data.amount.toString());
 
     try {
       const transaction = await senderWallet.sendTransaction({
-        to: recipientAddress,
+        to: data.recipientAddress,
         value: amountInWei,
-        gasPrice: gasPrice,
-        gasLimit: gasLimit,
+        gasPrice: data.gasPrice,
+        gasLimit: data.gasLimit,
       });
 
-      await ctx.reply(
-        `Successfully sent ${amount} ETH to ${recipientAddress}. \nTransaction hash: ${transaction.hash}`,
+      await data.ctx.reply(
+        `Successfully sent ${data.amount} ETH to ${data.recipientAddress}. \nTransaction hash: ${transaction.hash}`,
       );
     } catch (error) {
       console.error('Error sending ETH:', error);
 
       if (error.code === ErrorCodesEnum.INSUFFICIENT_FUNDS) {
-        await ctx.reply(
+        await data.ctx.reply(
           'You do not have sufficient funds for this transaction.',
         );
       } else {
-        await ctx.reply(
+        await data.ctx.reply(
           'An error occurred while sending ETH. Please try again later.',
         );
       }
     }
   }
-  private async helpHandler(ctx: any): Promise<void> {
+  private async helpHandler(ctx: Context): Promise<void> {
     let message = 'Available commands:\n';
+
     availableCommands.forEach((cmd) => {
       message += `${cmd.command}: ${cmd.description}\n`;
     });
@@ -218,7 +219,7 @@ export class BotService {
     await ctx.reply(message);
   }
 
-  private async defineAvailableBalance(
+  private async defineBalanceAndGas(
     address: string,
   ): Promise<IDefineAvailableBalance> {
     const balance = await this.provider.getBalance(address);

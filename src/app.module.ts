@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BotModule } from './telegram/bot.module';
+import { BotModule } from './bot/bot.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { WalletEntity } from './telegram/wallet.entity';
+import { WalletEntity } from './bot/wallet.entity';
 import { config } from 'dotenv';
 
 config();

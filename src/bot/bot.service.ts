@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { ethers } from 'ethers';
-import { WalletEntity } from 'src/telegram/wallet.entity';
+import { WalletEntity } from 'src/bot/wallet.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -15,25 +15,27 @@ export class BotService {
     private walletRepository: Repository<WalletEntity>,
   ) {
     this.provider = new ethers.JsonRpcProvider(process.env.RPC_PROVIDER_URL);
-
     this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
+    this.setupCommands();
+    this.bot.launch();
+  }
+
+  private setupCommands(): void {
     this.bot.command('start', this.startHandler.bind(this));
     this.bot.command('createwallet', this.createWalletHandler.bind(this));
     this.bot.command('send', this.sendEthHandler.bind(this));
     this.bot.command('checkbalance', this.checkBalance.bind(this));
     this.bot.command('help', this.helpHandler.bind(this));
-
-    this.bot.launch();
   }
 
-  async startHandler(ctx: any): Promise<void> {
+  private async startHandler(ctx: any): Promise<void> {
     ctx.reply(
       'Welcome to the Ethereum wallet bot! Use /help for check available commands',
     );
   }
 
-  async createWalletHandler(ctx: any): Promise<void> {
+  private async createWalletHandler(ctx: any): Promise<void> {
     const etherWallet = ethers.Wallet.createRandom();
 
     const wallet = await this.walletRepository.findOne({
@@ -55,7 +57,7 @@ export class BotService {
     ctx.reply(`Your new wallet address: ${etherWallet.address}`);
   }
 
-  async checkBalance(ctx: any): Promise<void> {
+  private async checkBalance(ctx: any): Promise<void> {
     const args = ctx.message.text.split(' ');
     const address = args[1];
 
@@ -86,7 +88,7 @@ export class BotService {
     }
   }
 
-  async sendEthHandler(ctx: any): Promise<void> {
+  private async sendEthHandler(ctx: any): Promise<void> {
     const args = ctx.message.text.split(' ');
     const recipientAddress = args[1];
 
@@ -179,7 +181,7 @@ export class BotService {
     });
   }
 
-  async processTransaction(
+  private async processTransaction(
     ctx: any,
     recipientAddress: string,
     amount: number,
@@ -223,7 +225,7 @@ export class BotService {
       }
     }
   }
-  async helpHandler(ctx: any): Promise<void> {
+  private async helpHandler(ctx: any): Promise<void> {
     const availableCommands = [
       { command: '/start', description: 'Start the bot' },
       {

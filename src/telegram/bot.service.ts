@@ -60,7 +60,7 @@ export class BotService {
     const address = args[1];
 
     if (!address) {
-      await ctx.reply('Invalid address. Usage: /checkBalance <address>');
+      await ctx.reply('Invalid address. Usage: /checkbalance <address>');
       return;
     }
 
@@ -106,8 +106,6 @@ export class BotService {
       return;
     }
 
-    const balance = await this.provider.getBalance(wallet.address);
-
     const keyboard = {
       inline_keyboard: [
         [{ text: '25%', callback_data: '25' }],
@@ -138,13 +136,28 @@ export class BotService {
             await ctx.reply('Invalid amount entered');
           }
         });
+      } else if (callbackData === '100') {
+        const balance = await this.provider.getBalance(wallet.address);
+
+        const feeData = await this.provider.getFeeData();
+
+        const availableBalance = balance - feeData.maxFeePerGas;
+
+        console.log('availableBalance', availableBalance);
+
+        await this.processTransaction(
+          ctx,
+          recipientAddress,
+          parseFloat(ethers.formatEther(availableBalance)),
+        );
       } else {
         const percentage = parseFloat(callbackData);
+
+        const balance = await this.provider.getBalance(wallet.address);
 
         if (!isNaN(percentage) && percentage > 0) {
           const amount =
             (percentage / 100) * parseFloat(ethers.formatEther(balance));
-
           await this.processTransaction(ctx, recipientAddress, amount);
         } else {
           await ctx.reply('Invalid selection');

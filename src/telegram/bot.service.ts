@@ -141,14 +141,27 @@ export class BotService {
 
         const feeData = await this.provider.getFeeData();
 
-        const availableBalance = balance - feeData.maxFeePerGas;
+        const gasPrice = BigInt(feeData.maxFeePerGas);
 
-        console.log('availableBalance', availableBalance);
+        const gasLimit = 21001n;
+
+        const gasFee = gasPrice * BigInt(gasLimit);
+
+        const availableBalance = balance - gasFee;
+
+        if (availableBalance <= 0) {
+          await ctx.reply(
+            'You do not have sufficient funds for this transaction.',
+          );
+          return;
+        }
 
         await this.processTransaction(
           ctx,
           recipientAddress,
           parseFloat(ethers.formatEther(availableBalance)),
+          gasLimit,
+          gasPrice,
         );
       } else {
         const percentage = parseFloat(callbackData);
@@ -170,6 +183,8 @@ export class BotService {
     ctx: any,
     recipientAddress: string,
     amount: number,
+    gasLimit?: bigint,
+    gasPrice?: bigint,
   ): Promise<void> {
     const wallet = await this.walletRepository.findOne({
       where: { userId: ctx.from.id },
@@ -187,6 +202,8 @@ export class BotService {
       const transaction = await senderWallet.sendTransaction({
         to: recipientAddress,
         value: amountInWei,
+        gasPrice: gasPrice,
+        gasLimit: gasLimit,
       });
 
       await ctx.reply(

@@ -28,7 +28,7 @@ export class BotService {
     this.bot.command('start', this.startHandler.bind(this));
     this.bot.command('createwallet', this.createWalletHandler.bind(this));
     this.bot.command('send', this.sendEthHandler.bind(this));
-    this.bot.command('checkbalance', this.checkBalance.bind(this));
+    this.bot.command('checkbalance', this.checkBalanceHandler.bind(this));
     this.bot.command('help', this.helpHandler.bind(this));
   }
 
@@ -36,6 +36,16 @@ export class BotService {
     await ctx.reply(
       'Welcome to the Ethereum wallet bot! Use /help for check available commands',
     );
+  }
+
+  private async helpHandler(ctx: Context): Promise<void> {
+    let message = 'Available commands:\n';
+
+    availableCommands.forEach((cmd) => {
+      message += `${cmd.command}: ${cmd.description}\n`;
+    });
+
+    await ctx.reply(message);
   }
 
   private async createWalletHandler(ctx: Context): Promise<void> {
@@ -60,7 +70,7 @@ export class BotService {
     ctx.reply(`Your new wallet address: ${etherWallet.address}`);
   }
 
-  private async checkBalance(ctx: any): Promise<void> {
+  private async checkBalanceHandler(ctx: any): Promise<void> {
     const args = ctx.message.text.split(' ');
     const address = args[1];
 
@@ -208,15 +218,6 @@ export class BotService {
         );
       }
     }
-  }
-  private async helpHandler(ctx: Context): Promise<void> {
-    let message = 'Available commands:\n';
-
-    availableCommands.forEach((cmd) => {
-      message += `${cmd.command}: ${cmd.description}\n`;
-    });
-
-    await ctx.reply(message);
   }
 
   private async defineBalanceAndGas(

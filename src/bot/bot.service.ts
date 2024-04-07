@@ -94,9 +94,9 @@ export class BotService {
     try {
       const balance = await this.provider.getBalance(address);
 
-      await ctx.reply(
-        `Balance of ${address}: ${parseFloat(ethers.formatEther(balance))} ETH`,
-      );
+      const formattedBalance = ethers.formatEther(balance);
+
+      await ctx.reply(`Balance of ${address}: ${formattedBalance} ETH`);
     } catch (error) {
       await ctx.reply(
         'Failed to check address balance. Please try again later.',

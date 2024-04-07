@@ -72,7 +72,7 @@ Use the /send <recipient_address> command to send ETH to another user.
 
 Use the /help command to get a list of available commands.
 
-## DB
+## Tables
 
 You can find the sql file in the project folder.
 

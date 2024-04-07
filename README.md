@@ -50,6 +50,15 @@ TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 
 RPC_PROVIDER_URL=your_ethereum_rpc_provider_url
 
+DB_HOST=localhost
+
+DB_PORT=3306
+
+DB_USERNAME=root
+
+DB_PASSWORD=root
+
+DB_DATABASE=eth_telegram_bot
 
 Add the bot to Telegram and start a conversation with it by clicking the "Start" button.
 

@@ -4,6 +4,9 @@ import { ethers } from 'ethers';
 import { WalletEntity } from 'src/bot/wallet.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ErrorCodesEnum, KeyboardOptionsEnum } from './bot.enums';
+import { amountKeyboard, availableCommands } from './bot.constants';
+import { IDefineAvailableBalance } from './bot.interfaces';
 
 @Injectable()
 export class BotService {
@@ -108,25 +111,15 @@ export class BotService {
       return;
     }
 
-    const keyboard = {
-      inline_keyboard: [
-        [{ text: '25%', callback_data: '25' }],
-        [{ text: '50%', callback_data: '50' }],
-        [{ text: '75%', callback_data: '75' }],
-        [{ text: '100%', callback_data: '100' }],
-        [{ text: 'Custom Amount', callback_data: 'custom' }],
-      ],
-    };
-
     await ctx.reply('Select the amount you want to send:', {
-      reply_markup: keyboard,
+      reply_markup: amountKeyboard,
     });
 
     this.bot.on('callback_query', async (query: any) => {
       const callbackData = query.update.callback_query.data;
       const recipientAddress = ctx.message.text.split(' ')[1];
 
-      if (callbackData === 'custom') {
+      if (callbackData === KeyboardOptionsEnum.CustomAmount) {
         await ctx.reply('Enter the custom amount:');
 
         this.bot.on('text', async (msg: any) => {
@@ -138,18 +131,9 @@ export class BotService {
             await ctx.reply('Invalid amount entered');
           }
         });
-      } else if (callbackData === '100') {
-        const balance = await this.provider.getBalance(wallet.address);
-
-        const feeData = await this.provider.getFeeData();
-
-        const gasPrice = BigInt(feeData.maxFeePerGas);
-
-        const gasLimit = 21001n;
-
-        const gasFee = gasPrice * BigInt(gasLimit);
-
-        const availableBalance = balance - gasFee;
+      } else if (callbackData === KeyboardOptionsEnum.OneHundredPercent) {
+        const { availableBalance, gasPrice, gasLimit } =
+          await this.defineAvailableBalance(wallet.address);
 
         if (availableBalance <= 0) {
           await ctx.reply(
@@ -214,7 +198,7 @@ export class BotService {
     } catch (error) {
       console.error('Error sending ETH:', error);
 
-      if (error.code === 'INSUFFICIENT_FUNDS') {
+      if (error.code === ErrorCodesEnum.INSUFFICIENT_FUNDS) {
         await ctx.reply(
           'You do not have sufficient funds for this transaction.',
         );
@@ -226,28 +210,33 @@ export class BotService {
     }
   }
   private async helpHandler(ctx: any): Promise<void> {
-    const availableCommands = [
-      { command: '/start', description: 'Start the bot' },
-      {
-        command: '/createwallet',
-        description: 'Generate a new Ethereum wallet',
-      },
-      {
-        command: '/send <recipientAddress>',
-        description: 'Send ETH to another address',
-      },
-      {
-        command: '/checkbalance <address>',
-        description: 'Check the balance of an Ethereum address',
-      },
-      { command: '/help', description: 'Display available commands' },
-    ];
-
     let message = 'Available commands:\n';
     availableCommands.forEach((cmd) => {
       message += `${cmd.command}: ${cmd.description}\n`;
     });
 
     await ctx.reply(message);
+  }
+
+  private async defineAvailableBalance(
+    address: string,
+  ): Promise<IDefineAvailableBalance> {
+    const balance = await this.provider.getBalance(address);
+
+    const feeData = await this.provider.getFeeData();
+
+    const gasPrice = BigInt(feeData.maxFeePerGas);
+
+    const gasLimit = 21001n;
+
+    const gasFee = gasPrice * BigInt(gasLimit);
+
+    const availableBalance = balance - gasFee;
+
+    return {
+      availableBalance,
+      gasLimit,
+      gasPrice,
+    };
   }
 }

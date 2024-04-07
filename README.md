@@ -44,11 +44,37 @@ $ npm run start:dev
 # production mode
 $ npm run start:prod
 ```
-Start telegram bot @TestTaskEtherBot
+Create a .env file in the root of the project and specify the necessary environment variables:
 
-Use command "/help"
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+
+RPC_PROVIDER_URL=your_ethereum_rpc_provider_url
+
+
+Add the bot to Telegram and start a conversation with it by clicking the "Start" button.
+
+Use the /createwallet command to create a new Ethereum wallet.
+
+Use the /checkbalance <address> command to check the balance of the specified Ethereum wallet.
+
+Use the /send <recipient_address> command to send ETH to another user.
+
+Use the /help command to get a list of available commands.
+
 ## DB
 
 You can find the sql file in the project folder.
 
-You can use a query inside to create a table.
+
+## Technologies
+Node.js
+
+Nest.js
+
+Telegraf (Telegram Bot API for Node.js)
+
+ethers.js (Ethereum library for JavaScript)
+
+TypeORM (Object-Relational Mapping for TypeScript)
+
+TypeScript

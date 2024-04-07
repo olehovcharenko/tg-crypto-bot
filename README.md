@@ -32,18 +32,7 @@
 $ npm install
 ```
 
-## Running the app
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
+## Setup environment
 Create a .env file in the root of the project and specify the necessary environment variables:
 
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
@@ -59,6 +48,19 @@ DB_USERNAME=root
 DB_PASSWORD=root
 
 DB_DATABASE=eth_telegram_bot
+
+## Running the app
+
+```bash
+# development
+$ npm run start
+
+# watch mode
+$ npm run start:dev
+
+# production mode
+$ npm run start:prod
+```
 
 Add the bot to Telegram and start a conversation with it by clicking the "Start" button.
 

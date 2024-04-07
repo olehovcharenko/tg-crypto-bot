@@ -115,14 +115,14 @@ export class BotService {
       reply_markup: amountKeyboard,
     });
 
-    this.bot.on('callback_query', async (query: any) => {
+    this.bot.on('callback_query', async (query: any): Promise<void> => {
       const callbackData = query.update.callback_query.data;
       const recipientAddress = ctx.message.text.split(' ')[1];
 
       if (callbackData === KeyboardOptionsEnum.CustomAmount) {
         await ctx.reply('Enter the custom amount:');
 
-        this.bot.on('text', async (msg: any) => {
+        this.bot.on('text', async (msg: any): Promise<void> => {
           const customAmount = parseFloat(msg.text);
 
           if (!isNaN(customAmount) && customAmount > 0) {
